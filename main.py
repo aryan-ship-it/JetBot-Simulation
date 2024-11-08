@@ -1,186 +1,191 @@
 import pygame
 import sys
 import heapq
+import random
+
+# Define colors
+WHITE = (255, 255, 255)
+GREEN = (0, 255, 0)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)  # Thief color
+YELLOW = (255, 215, 0)  # Coin color
+BLUE = (0, 0, 255)  # Goal color
+
+# Define maze dimensions
+CELL_SIZE = 40
+WIDTH, HEIGHT = 600, 600
 
 # Initialize Pygame
 pygame.init()
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("AI Coin Collector")
 
-# Define some colors
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-YELLOW = (255, 255, 0)  # For coins
-BLUE = (0, 0, 255)      # For walls
-GREEN = (0, 255, 0)     # For the player/AI
-PURPLE = (160, 32, 240) # For finish points
-
-# Set the size of the grid cells and the window size
-CELL_SIZE = 40
-GRID_WIDTH = 15
-GRID_HEIGHT = 12
-WINDOW_WIDTH = CELL_SIZE * GRID_WIDTH
-WINDOW_HEIGHT = CELL_SIZE * GRID_HEIGHT
-
-# Create the screen
-screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-pygame.display.set_caption("Maze with AI Pathfinding")
-
-# Define the maze layout (0 = free space, 1 = wall, 2 = coin, 3 = obstacle, 4 = finish point)
+# Maze data (1 represents wall, 0 represents walkable path)
 maze = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 0, 0, 0, 2, 0, 0, 1, 0, 0, 0, 0, 0, 4, 1],
-    [1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
-    [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
-    [1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1],
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1],
-    [1, 0, 0, 0, 2, 0, 0, 2, 0, 0, 0, 0, 0, 4, 1],
-    [1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
-    [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
-    [1, 2, 1, 1, 1, 1, 1, 4, 1, 1, 1, 1, 1, 4, 1],
+    [1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1],
+    [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1],
+    [1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+    [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1],
+    [1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+    [1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+    [1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+    [1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1],
+    [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+    [1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1],
+    [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ]
 
-# Player and AI starting position (row, col)
+# Define start position, thieves, coins, and goal
 ai_start = (1, 1)
+thief_positions = [(9,3), (2,11), (11,7)]  # 3 thieves
+coin_positions = [(1,9), (5,11), (9,5), (13,4), (9,11)]  # 5 coins
+goal_position = (13, 13)  # Goal at (13, 13)
 
-# Define finish points and coins
-finish_points = [(1, 13), (7, 13), (10, 13)]  # Multiple finish points (row, col)
-coin_positions = [(1, 4), (7, 7), (5, 4)]  # Coins' positions
+# Function to draw the maze
+def draw_maze():
+    for row in range(len(maze)):
+        for col in range(len(maze[row])):
+            color = BLACK if maze[row][col] == 1 else WHITE
+            pygame.draw.rect(screen, color, (col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+    
+    # Draw coins
+    for coin in coin_positions:
+        coin_x = coin[1] * CELL_SIZE
+        coin_y = coin[0] * CELL_SIZE
+        pygame.draw.circle(screen, YELLOW, (coin_x + CELL_SIZE // 2, coin_y + CELL_SIZE // 2), CELL_SIZE // 4)
 
-# A* Search implementation with priority to coin collection
-def a_star_search(start, goal):
-    """A* algorithm to find the path from start to goal"""
-    open_set = []
-    heapq.heappush(open_set, (0, start))
-    
-    came_from = {}
-    g_score = {start: 0}
-    f_score = {start: heuristic(start, goal)}
-    
-    while open_set:
-        current = heapq.heappop(open_set)[1]
-        
-        # If the current node is the goal, reconstruct path
-        if current == goal:
-            return reconstruct_path(came_from, current)
-        
-        # Get neighbors
-        neighbors = get_neighbors(current)
-        
-        for neighbor in neighbors:
-            tentative_g_score = g_score[current] + 1
-            
-            if neighbor not in g_score or tentative_g_score < g_score[neighbor]:
-                came_from[neighbor] = current
-                g_score[neighbor] = tentative_g_score
-                f_score[neighbor] = g_score[neighbor] + heuristic(neighbor, goal)
-                heapq.heappush(open_set, (f_score[neighbor], neighbor))
-    
-    return []  # Return empty path if no solution
+    # Draw thieves
+    for thief in thief_positions:
+        thief_x = thief[1] * CELL_SIZE
+        thief_y = thief[0] * CELL_SIZE
+        pygame.draw.rect(screen, RED, (thief_x, thief_y, CELL_SIZE, CELL_SIZE))
 
-def get_neighbors(pos):
-    """Returns the valid neighbors of the current position"""
-    row, col = pos
-    neighbors = []
-    
-    for d_row, d_col in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-        new_row, new_col = row + d_row, col + d_col
-        
-        if 0 <= new_row < GRID_HEIGHT and 0 <= new_col < GRID_WIDTH and maze[new_row][new_col] != 1:
-            neighbors.append((new_row, new_col))
-    
-    return neighbors
+    # Draw goal
+    goal_x = goal_position[1] * CELL_SIZE
+    goal_y = goal_position[0] * CELL_SIZE
+    pygame.draw.rect(screen, BLUE, (goal_x, goal_y, CELL_SIZE, CELL_SIZE))
 
+# Heuristic for A* search (Manhattan distance)
 def heuristic(a, b):
-    """Manhattan distance heuristic"""
     return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
-def reconstruct_path(came_from, current):
-    """Reconstruct the path from start to goal"""
-    total_path = [current]
-    while current in came_from:
-        current = came_from[current]
-        total_path.append(current)
-    return total_path[::-1]
+# A* search algorithm
+def a_star_search(start, goal):
+    frontier = []
+    heapq.heappush(frontier, (0, start))
+    came_from = {}
+    cost_so_far = {}
+    came_from[start] = None
+    cost_so_far[start] = 0
 
-def find_path_with_coins(start):
-    """Find the most optimal path that collects the maximum coins"""
+    while frontier:
+        current = heapq.heappop(frontier)[1]
+
+        if current == goal:
+            break
+
+        # Explore neighbors (up, down, left, right)
+        for direction in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
+            neighbor = (current[0] + direction[0], current[1] + direction[1])
+
+            # Check if the neighbor is walkable
+            if 0 <= neighbor[0] < len(maze) and 0 <= neighbor[1] < len(maze[0]) and maze[neighbor[0]][neighbor[1]] == 0:
+                new_cost = cost_so_far[current] + 1
+                if neighbor not in cost_so_far or new_cost < cost_so_far[neighbor]:
+                    cost_so_far[neighbor] = new_cost
+                    priority = new_cost + heuristic(goal, neighbor)
+                    heapq.heappush(frontier, (priority, neighbor))
+                    came_from[neighbor] = current
+
+    # If goal is not in came_from, no valid path was found
+    if goal not in came_from:
+        return []
+
+    # Reconstruct path
+    current = goal
     path = []
-    remaining_coins = set(coin_positions)
-    current_position = start
-    
-    while remaining_coins:
-        # Find the nearest coin
-        nearest_coin = min(remaining_coins, key=lambda coin: heuristic(current_position, coin))
-        
-        # Find path to the nearest coin
-        path_to_coin = a_star_search(current_position, nearest_coin)
-        path += path_to_coin[1:]  # Skip the first position (already there)
-        
-        # Move to that coin and collect it
-        current_position = nearest_coin
-        remaining_coins.remove(nearest_coin)
-    
-    # After collecting all coins, find the nearest finish point
-    nearest_finish = min(finish_points, key=lambda finish: heuristic(current_position, finish))
-    path_to_finish = a_star_search(current_position, nearest_finish)
-    path += path_to_finish[1:]
-    
+    while current != start:
+        path.append(current)
+        current = came_from[current]
+    path.append(start)
+    path.reverse()
     return path
 
-def draw_maze():
-    """Function to draw the maze based on the grid layout"""
-    for row in range(GRID_HEIGHT):
-        for col in range(GRID_WIDTH):
-            cell = maze[row][col]
-            x = col * CELL_SIZE
-            y = row * CELL_SIZE
-
-            if cell == 1:  # Wall
-                pygame.draw.rect(screen, BLUE, (x, y, CELL_SIZE, CELL_SIZE))
-            elif cell == 2:  # Coin
-                pygame.draw.circle(screen, YELLOW, (x + CELL_SIZE // 2, y + CELL_SIZE // 2), CELL_SIZE // 4)
-            elif cell == 3:  # Obstacle
-                pygame.draw.rect(screen, RED, (x, y, CELL_SIZE, CELL_SIZE))
-            elif cell == 4:  # Finish points
-                pygame.draw.rect(screen, PURPLE, (x, y, CELL_SIZE, CELL_SIZE))
-            else:  # Empty space
-                pygame.draw.rect(screen, WHITE, (x, y, CELL_SIZE, CELL_SIZE))
-
-def draw_ai(ai_path, step):
-    """Draw the AI on the screen at the current step in its path"""
-    if step < len(ai_path):
-        ai_x = ai_path[step][1] * CELL_SIZE
-        ai_y = ai_path[step][0] * CELL_SIZE
-        pygame.draw.rect(screen, GREEN, (ai_x, ai_y, CELL_SIZE, CELL_SIZE))
-
+# Main function
 def main():
-    # Find the optimal path for the AI to collect coins and reach the finish
-    ai_path = find_path_with_coins(ai_start)
+    current_position = ai_start
+    coin_collected = set()
     
     clock = pygame.time.Clock()
-    step = 0
+    heading_to_exit = False  # Flag to track if the AI is heading to an exit
     
-    # Main loop
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-        
-        # Draw the maze
+
+        # Draw the maze and objects
         screen.fill(WHITE)
         draw_maze()
-        
-        # Draw the AI
-        draw_ai(ai_path, step)
-        step += 1
-        if step >= len(ai_path):
-            step = len(ai_path) - 1  # Stop at the end
-        
+
+        # If there are remaining coins, find and move toward the nearest one
+        if not heading_to_exit:
+            remaining_coins = [coin for coin in coin_positions if coin not in coin_collected]
+            
+            if remaining_coins:
+                nearest_coin = min(remaining_coins, key=lambda coin: heuristic(current_position, coin))
+                path_to_coin = a_star_search(current_position, nearest_coin)
+
+                if path_to_coin:  # If a valid path to the coin is found
+                    next_step = path_to_coin[1]  # Move to the next step
+                    current_position = next_step
+
+                    # If the AI reaches the coin, collect it
+                    if current_position == nearest_coin:
+                        coin_collected.add(nearest_coin)
+                        print(f"Collected coin at {nearest_coin}")
+            else:
+                # No remaining coins, switch to heading towards an exit
+                heading_to_exit = True
+                print("All coins collected! Heading towards the nearest exit...")
+
+        # If heading to an exit, find and move toward the nearest one
+        if heading_to_exit:
+            reachable_exits = []
+            for exit_point in goal_position:
+                path_to_exit = a_star_search(current_position, exit_point)
+                if path_to_exit:
+                    reachable_exits.append((exit_point, path_to_exit))
+
+            if reachable_exits:
+                # Choose the nearest reachable exit
+                nearest_exit, path_to_exit = min(reachable_exits, key=lambda x: len(x[1]))
+
+                if path_to_exit:  # If a valid path to the exit is found
+                    next_step = path_to_exit[1]
+                    current_position = next_step
+
+                    # If the AI reaches the exit, stop the game
+                    if current_position == nearest_exit:
+                        print("AI reached the finish!")
+                        break
+            else:
+                print("No reachable exits found!")
+                break
+
+        # Draw the AI at its current position
+        ai_x = current_position[1] * CELL_SIZE
+        ai_y = current_position[0] * CELL_SIZE
+        pygame.draw.rect(screen, GREEN, (ai_x, ai_y, CELL_SIZE, CELL_SIZE))
+
         # Update the screen
         pygame.display.flip()
-        
+
         # Cap the frame rate
         clock.tick(5)
 
