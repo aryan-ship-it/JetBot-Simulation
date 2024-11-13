@@ -45,6 +45,8 @@ thief_positions = [(9,3), (2,11), (11,7)]  # 3 thieves
 coin_positions = [(1,9), (5,11), (9,5), (13,4), (9,11)]  # 5 coins
 goal_position = (13, 13)  # Goal at (13, 13)
 
+
+
 # Function to draw the maze
 def draw_maze():
     for row in range(len(maze)):
@@ -74,7 +76,7 @@ def heuristic(a, b):
     return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
 # A* search algorithm
-def a_star_search(start, goal):
+def a_star_search(start, goal, thief_positions):
     frontier = []
     heapq.heappush(frontier, (0, start))
     came_from = {}
@@ -93,7 +95,7 @@ def a_star_search(start, goal):
             neighbor = (current[0] + direction[0], current[1] + direction[1])
 
             # Check if the neighbor is walkable
-            if 0 <= neighbor[0] < len(maze) and 0 <= neighbor[1] < len(maze[0]) and maze[neighbor[0]][neighbor[1]] == 0:
+            if 0 <= neighbor[0] < len(maze) and 0 <= neighbor[1] < len(maze[0]) and maze[neighbor[0]][neighbor[1]] == 0 and neighbor not in thief_positions:
                 new_cost = cost_so_far[current] + 1
                 if neighbor not in cost_so_far or new_cost < cost_so_far[neighbor]:
                     cost_so_far[neighbor] = new_cost
@@ -139,7 +141,7 @@ def main():
             
             if remaining_coins:
                 nearest_coin = min(remaining_coins, key=lambda coin: heuristic(current_position, coin))
-                path_to_coin = a_star_search(current_position, nearest_coin)
+                path_to_coin = a_star_search(current_position, nearest_coin, thief_positions)
 
                 if path_to_coin:  # If a valid path to the coin is found
                     next_step = path_to_coin[1]  # Move to the next step
@@ -156,24 +158,16 @@ def main():
 
         # If heading to an exit, find and move toward the nearest one
         if heading_to_exit:
-            reachable_exits = []
-            for exit_point in goal_position:
-                path_to_exit = a_star_search(current_position, exit_point)
-                if path_to_exit:
-                    reachable_exits.append((exit_point, path_to_exit))
+            path_to_exit = a_star_search(current_position, goal_position, thief_positions)
+                
+            if path_to_exit:
+                next_step = path_to_exit[1]
+                current_position = next_step
 
-            if reachable_exits:
-                # Choose the nearest reachable exit
-                nearest_exit, path_to_exit = min(reachable_exits, key=lambda x: len(x[1]))
-
-                if path_to_exit:  # If a valid path to the exit is found
-                    next_step = path_to_exit[1]
-                    current_position = next_step
-
-                    # If the AI reaches the exit, stop the game
-                    if current_position == nearest_exit:
-                        print("AI reached the finish!")
-                        break
+                # If the AI reaches the exit, stop the game
+                if current_position == goal_position:
+                    print("AI reached the finish!")
+                    break
             else:
                 print("No reachable exits found!")
                 break
