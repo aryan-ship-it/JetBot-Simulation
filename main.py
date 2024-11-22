@@ -11,44 +11,58 @@ RED = (255, 0, 0)  # Thief color
 YELLOW = (255, 215, 0)  # Coin color
 BLUE = (0, 0, 255)  # Goal color
 
-# Define maze dimensions
-CELL_SIZE = 40
-WIDTH, HEIGHT = 600, 600
+# Ensure you adjust `CELL_SIZE` to fit the new maze into the screen dimensions
+CELL_SIZE = 20  # Smaller cell size for the larger maze
+WIDTH, HEIGHT = 30 * CELL_SIZE, 30 * CELL_SIZE
 
 # Initialize Pygame
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("AI Coin Collector")
 
-# Maze data (1 represents wall, 0 represents walkable path)
 maze = [
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1],
-    [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1],
-    [1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
-    [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1],
-    [1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
-    [1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
-    [1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
-    [1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1],
-    [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-    [1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1],
-    [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    [1] * 30,
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1],
+    [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1],
+    [1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1],
+    [1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1],
+    [1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1],
+    [1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1],
+    [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1],
+    [1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1],
+    [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1],
+    [1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1],
+    [1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1],
+    [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1],
+    [1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1],
+    [1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1],
+    [1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1],
+    [1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1],
+    [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1],
+    [1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1],
+    [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1],
+    [1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1],
+    [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 ]
 
-# Define start position, thieves, coins, and goal
-ai_start = (1, 1)
-thief_positions = [(9,3), (2,11), (11,7)]  # 3 thieves
-coin_positions = [(1,9), (5,11), (9,5), (13,4), (9,11)]  # 5 coins
-goal_position = (13, 13)  # Goal at (13, 13)
 
+# Update positions for AI, thieves, coins, and goal
+ai_start = (1, 1)
+thief_positions = [(9, 15), (18, 6), (25, 20), (5, 25), (22, 14)]  # 5 thieves
+coin_positions = [
+    (9,16), (18, 8), (25,22), (5, 26), (7, 8), (16, 18), (22, 20), (5, 1), (18, 1), (26, 1)
+]  # 10 coins
+goal_position = (26, 26)  # Goal position updated for the larger grid
 
 
 # Function to draw the maze
-def draw_maze():
+def draw_maze(thief_positions):
     for row in range(len(maze)):
         for col in range(len(maze[row])):
             color = BLACK if maze[row][col] == 1 else WHITE
@@ -117,59 +131,103 @@ def a_star_search(start, goal, thief_positions):
     path.reverse()
     return path
 
-# Main function
+def move_thieves(thief_positions, maze, ai_position, last_moves):
+    """Move each thief to a new position, avoiding backtracking unless at a dead end."""
+    new_thief_positions = []
+    updated_last_moves = []
+
+    for i, thief in enumerate(thief_positions):
+        last_move = last_moves[i]  # Get the last move of the current thief
+
+        # Generate possible moves (up, down, left, right)
+        possible_moves = [
+            (thief[0] - 1, thief[1]),  # Up
+            (thief[0] + 1, thief[1]),  # Down
+            (thief[0], thief[1] - 1),  # Left
+            (thief[0], thief[1] + 1)   # Right
+        ]
+
+        # Filter valid moves
+        valid_moves = [
+            move for move in possible_moves
+            if 0 <= move[0] < len(maze) and 0 <= move[1] < len(maze[0])  # Within bounds
+            and maze[move[0]][move[1]] != 1  # Not a wall
+            and move not in thief_positions  # Avoid overlapping with other thieves
+        ]
+
+        # Exclude the last move from valid options if there are other valid moves
+        if last_move in valid_moves and len(valid_moves) > 1:
+            valid_moves.remove(last_move)
+
+        # Decide on movement strategy (random, chasing AI, etc.)
+        if valid_moves:
+            # Random movement
+            new_position = random.choice(valid_moves)
+            new_thief_positions.append(new_position)
+            updated_last_moves.append(thief)  # Update the last move to the current position
+        else:
+            # No valid moves, stay in place
+            new_thief_positions.append(thief)
+            updated_last_moves.append(last_move)  # Keep the last move as is
+
+    return new_thief_positions, updated_last_moves
+
+
 def main():
     current_position = ai_start
     coin_collected = set()
-    
+    thief_positions = [(9, 15), (18, 6), (25, 20), (5, 25), (22, 14)]  # Example thief starting positions
+    last_moves = thief_positions[:]  # Initialize last_moves to be the starting positions of the thieves
+    step_counter = 0  # Initialize the step counter
+
     clock = pygame.time.Clock()
-    heading_to_exit = False  # Flag to track if the AI is heading to an exit
-    
+
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
-        # Draw the maze and objects
+        # Move thieves
+        thief_positions, last_moves = move_thieves(thief_positions, maze, current_position, last_moves)
+
+        # Draw the maze, coins, and thieves
         screen.fill(WHITE)
-        draw_maze()
+        draw_maze(thief_positions)
 
-        # If there are remaining coins, find and move toward the nearest one
-        if not heading_to_exit:
-            remaining_coins = [coin for coin in coin_positions if coin not in coin_collected]
-            
-            if remaining_coins:
-                nearest_coin = min(remaining_coins, key=lambda coin: heuristic(current_position, coin))
-                path_to_coin = a_star_search(current_position, nearest_coin, thief_positions)
+        for thief in thief_positions:
+            thief_x = thief[1] * CELL_SIZE
+            thief_y = thief[0] * CELL_SIZE
+            pygame.draw.rect(screen, RED, (thief_x, thief_y, CELL_SIZE, CELL_SIZE))
 
-                if path_to_coin:  # If a valid path to the coin is found
-                    next_step = path_to_coin[1]  # Move to the next step
-                    current_position = next_step
+        # Update AI logic
+        remaining_coins = [coin for coin in coin_positions if coin not in coin_collected]
 
-                    # If the AI reaches the coin, collect it
-                    if current_position == nearest_coin:
-                        coin_collected.add(nearest_coin)
-                        print(f"Collected coin at {nearest_coin}")
-            else:
-                # No remaining coins, switch to heading towards an exit
-                heading_to_exit = True
-                print("All coins collected! Heading towards the nearest exit...")
+        if remaining_coins:
+            furthest_coin = max(remaining_coins, key=lambda coin: heuristic(goal_position, coin))
+            path_to_coin = a_star_search(current_position, furthest_coin, thief_positions)
 
-        # If heading to an exit, find and move toward the nearest one
-        if heading_to_exit:
-            path_to_exit = a_star_search(current_position, goal_position, thief_positions)
-                
-            if path_to_exit:
-                next_step = path_to_exit[1]
+            if path_to_coin:
+                next_step = path_to_coin[1]
                 current_position = next_step
+                step_counter += 1
 
-                # If the AI reaches the exit, stop the game
+                if current_position == furthest_coin:
+                    coin_collected.add(furthest_coin)
+                    print(f"Collected coin at {furthest_coin}")
+        else:
+            path_to_goal = a_star_search(current_position, goal_position, thief_positions)
+
+            if path_to_goal:
+                next_step = path_to_goal[1]
+                current_position = next_step
+                step_counter += 1
+
                 if current_position == goal_position:
-                    print("AI reached the finish!")
+                    print(f"AI reached the finish in {step_counter} steps!")
                     break
             else:
-                print("No reachable exits found!")
+                print("No reachable path to goal!")
                 break
 
         # Draw the AI at its current position
